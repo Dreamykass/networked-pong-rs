@@ -1,15 +1,42 @@
-use macroquad::prelude::*;
+mod client;
+mod netw_general;
+mod server;
+mod verification;
+mod world;
 
 #[macroquad::main("Pong")]
 async fn main() {
-    loop {
-        clear_background(RED);
+    fern::Dispatch::new()
+        .format(|out, message, record| {
+            out.finish(format_args!(
+                "[{}] [{}:{}] [{}] : {}",
+                chrono::Local::now().format("%H:%M:%S.%3f"),
+                record.target(),
+                // record.file().unwrap_or("?"),
+                record.line().unwrap_or(0),
+                record.level(),
+                message
+            ))
+        })
+        .level(log::LevelFilter::Info)
+        .chain(std::io::stdout())
+        .apply()
+        .unwrap();
 
-        draw_line(40.0, 40.0, 100.0, 200.0, 15.0, BLUE);
-        draw_rectangle(screen_width() / 2.0 - 60.0, 100.0, 120.0, 60.0, GREEN);
-        draw_circle(screen_width() - 30.0, screen_height() - 30.0, 15.0, YELLOW);
-        draw_text("HELLO", 20.0, 20.0, 20.0, DARKGRAY);
+    let env_arg = std::env::args()
+        .collect::<Vec<_>>()
+        .get(1)
+        .expect("The first argument should either be 'client' or 'server', while it was nothing.")
+        .clone();
 
-        next_frame().await
-    }
+    match env_arg.as_str() {
+        "server" => server::server_loop().await,
+        "client" => client::client_loop().await,
+        _ => {
+            panic!(
+                "The first argument should either be 'client' or 'server', while it was '{}'.",
+                env_arg
+            )
+        }
+    };
 }
