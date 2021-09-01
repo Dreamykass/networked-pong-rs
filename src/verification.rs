@@ -1,5 +1,3 @@
-use anyhow::Context;
-use std::fs;
 use std::sync::Arc;
 
 struct SkipCertificationVerification;

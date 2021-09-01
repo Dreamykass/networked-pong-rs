@@ -1,4 +1,6 @@
 mod client;
+mod input;
+mod message;
 mod netw_general;
 mod server;
 mod verification;
