@@ -30,14 +30,24 @@ async fn server_netw_thread() {
     log::info!("server_netw_thread");
 
     let mut endpoint_builder = quinn::Endpoint::builder();
-    // endpoint_builder.default_client_config(verification::new_insecure_client_config());
-    endpoint_builder.listen(quinn::ServerConfig::default());
+
+    let mut server_config_builder = quinn::ServerConfigBuilder::default();
+    let (cert, key) = verification::generate_self_signed_cert().unwrap();
+    server_config_builder
+        .certificate(quinn::CertificateChain::from_certs(vec![cert]), key)
+        .unwrap();
+
+    endpoint_builder.listen(server_config_builder.build());
 
     let (endpoint, mut incoming) = endpoint_builder.bind(&netw_general::server_addr()).unwrap();
 
     while let Some(conn) = incoming.next().await {
         let mut connection: quinn::NewConnection = conn.await.unwrap();
         log::info!("received a connection");
+
+        // while let Some(Ok(received_bytes)) = connection.datagrams.next().await {
+        //     log::info!("received datagram: {:?}", received_bytes);
+        // }
 
         // Save connection somewhere, start transferring, receiving data, see DataTransfer tutorial.
     }

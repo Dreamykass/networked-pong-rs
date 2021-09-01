@@ -26,11 +26,16 @@ async fn client_netw_thread() {
     let mut endpoint_builder = quinn::Endpoint::builder();
     endpoint_builder.default_client_config(verification::new_insecure_client_config());
     let (endpoint, _) = endpoint_builder.bind(&netw_general::client_addr()).unwrap();
+
     let connection = endpoint
         .connect(&netw_general::server_addr(), netw_general::SERVER_NAME)
         .unwrap()
         .await
         .unwrap();
-
     log::info!("connection ok");
+
+    // connection.send_datagram(b"test".into()).await.unwrap();
+    // connection
+    //     .connection
+    //     .send_datagram("Hello from the client!".into());
 }

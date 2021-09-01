@@ -18,3 +18,5 @@ rustls = { version = "*" , features = ["dangerous_configuration", "quic"] }
 webpki = "*"
 futures = "*"
 tokio = {version = "*",  features = ["full"] }
+anyhow = "1.0.43"
+rcgen = "0.8.13"
