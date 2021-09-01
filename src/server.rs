@@ -9,7 +9,7 @@ pub async fn server_loop() {
     let mut world = new_world();
 
     let (world_watch_sender, world_watch_recver) = tokio::sync::watch::channel(world.clone());
-    let (input_channel_sender, mut input_watch_recver) = tokio::sync::mpsc::channel(1);
+    let (input_channel_sender, input_watch_recver) = std::sync::mpsc::channel();
 
     std::thread::spawn(|| server_netw_thread(world_watch_recver, input_channel_sender));
 
@@ -20,7 +20,10 @@ pub async fn server_loop() {
         draw_text("SERVER", 20.0, 20.0, 40.0, RED);
 
         render_world(&world, RED);
-        update_world(&mut world, input_watch_recver.recv().await.unwrap());
+        update_world(
+            &mut world,
+            input_watch_recver.try_recv().unwrap_or_default(),
+        );
         world_watch_sender.send(world.clone()).unwrap();
 
         next_frame().await
@@ -28,29 +31,53 @@ pub async fn server_loop() {
 }
 
 pub fn update_world(world: &mut World, input: Input) {
-    world.ball_pos += world.ball_vector;
-    if world.ball_pos.x < 0.0 {
-        world.ball_pos.x = 0.5;
-    }
-    if world.ball_pos.x > 1.0 {
-        world.ball_pos.x = 0.5;
-    }
-    if world.ball_pos.y < 0.0 {
-        world.ball_pos.y = 0.5;
-    }
-    if world.ball_pos.y > 1.0 {
-        world.ball_pos.y = 0.5;
+    // input
+    {
+        if input.reset {
+            *world = new_world();
+        }
+
+        if input.up {
+            world.paddle_left.y -= 0.01;
+        }
+        if input.down {
+            world.paddle_left.y += 0.01;
+        }
     }
 
-    if input.reset {
-        *world = new_world();
+    // right paddle
+    {
+        if world.ball_pos.y < world.paddle_right.y {
+            world.paddle_right.y -= 0.01;
+        }
+        if world.ball_pos.y > world.paddle_right.y {
+            world.paddle_right.y += 0.01;
+        }
+    }
+
+    // ball
+    {
+        world.ball_pos += world.ball_vector;
+
+        if world.ball_pos.x < 0.0 {
+            world.ball_pos.x = 0.5;
+        }
+        if world.ball_pos.x > 1.0 {
+            world.ball_pos.x = 0.5;
+        }
+        if world.ball_pos.y < 0.0 {
+            world.ball_pos.y = 0.5;
+        }
+        if world.ball_pos.y > 1.0 {
+            world.ball_pos.y = 0.5;
+        }
     }
 }
 
 #[tokio::main] // converts from async to sync function
 async fn server_netw_thread(
     world_watch_recver: tokio::sync::watch::Receiver<World>,
-    input_channel_sender: tokio::sync::mpsc::Sender<Input>,
+    input_channel_sender: std::sync::mpsc::Sender<Input>,
 ) {
     log::info!("server_netw_thread");
 
@@ -81,7 +108,7 @@ async fn server_netw_thread(
 async fn handle_connection(
     mut connection: quinn::NewConnection,
     mut world_watch_recver: tokio::sync::watch::Receiver<World>,
-    mut input_channel_sender: tokio::sync::mpsc::Sender<Input>,
+    input_channel_sender: std::sync::mpsc::Sender<Input>,
 ) {
     let mut user_id = "unknown".to_string();
 
@@ -117,7 +144,7 @@ async fn handle_connection(
                             },
                             Message::UserInput(input) => {
                                 log::info!("{:?}", input);
-                                input_channel_sender.try_send(input);
+                                input_channel_sender.send(input).unwrap();
                             }
                         }
                     }
