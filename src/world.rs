@@ -14,7 +14,7 @@ pub fn new_world() -> World {
     World {
         ball_pos: [0.5, 0.5].into(),
         ball_vector: [0.004, 0.001].into(),
-        paddle_left: [0.04, 0.5].into(),
+        paddle_left: [0.08, 0.5].into(),
         paddle_right: [1.0 - 0.04, 0.5].into(),
     }
 }

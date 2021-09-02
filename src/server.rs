@@ -2,6 +2,7 @@ use crate::input::Input;
 use crate::message::*;
 use crate::world::*;
 use crate::{netw_general, verification};
+use ::rand::Rng;
 use futures::stream::StreamExt;
 use macroquad::prelude::*;
 
@@ -35,6 +36,7 @@ pub fn update_world(world: &mut World, input: Input) {
     {
         if input.reset {
             *world = new_world();
+            log::info!("world got reset by the client input");
         }
 
         if input.up {
@@ -45,7 +47,7 @@ pub fn update_world(world: &mut World, input: Input) {
         }
     }
 
-    // right paddle
+    // right paddle (computer/bot/ai player)
     {
         if world.ball_pos.y < world.paddle_right.y {
             world.paddle_right.y -= 0.01;
@@ -59,17 +61,46 @@ pub fn update_world(world: &mut World, input: Input) {
     {
         world.ball_pos += world.ball_vector;
 
+        // bounce off the left-right edges
         if world.ball_pos.x < 0.0 {
             world.ball_pos.x = 0.5;
+            world.ball_vector = [0.0, 0.0].into();
         }
         if world.ball_pos.x > 1.0 {
             world.ball_pos.x = 0.5;
+            world.ball_vector = [0.0, 0.0].into();
         }
+
+        // bounce off the top/bottom edges
         if world.ball_pos.y < 0.0 {
-            world.ball_pos.y = 0.5;
+            world.ball_pos.y = 0.0;
+            world.ball_vector.y *= -1.0;
+            log::info!("ball bounced off the top edge");
         }
         if world.ball_pos.y > 1.0 {
-            world.ball_pos.y = 0.5;
+            world.ball_pos.y = 1.0;
+            world.ball_vector.y *= -1.0;
+            log::info!("ball bounced off the bottom edge");
+        }
+
+        // bounce off the paddles
+        if world.ball_pos.x > world.paddle_right.x
+            && world.ball_pos.y > world.paddle_right.y - 0.05
+            && world.ball_pos.y < world.paddle_right.y + 0.05
+        {
+            log::info!("ball bounced off the right paddle");
+            world.ball_pos.x = world.paddle_right.x;
+            world.ball_vector.x *= -1.0;
+            world.ball_vector.y = ::rand::thread_rng().gen_range(-0.02..0.02);
+        }
+        if world.ball_pos.x < world.paddle_left.x
+            && world.ball_pos.y > world.paddle_left.y - 0.05
+            && world.ball_pos.y < world.paddle_left.y + 0.05
+        {
+            log::info!("ball bounced off the left paddle");
+            world.ball_pos.x = world.paddle_left.x;
+            world.ball_vector.x *= -1.0;
+            world.ball_vector.y = ::rand::thread_rng().gen_range(-0.02..0.02);
         }
     }
 }

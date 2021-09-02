@@ -19,7 +19,7 @@ pub async fn client_loop() {
         log::info!("-------- frame begins --------");
 
         clear_background(BLACK);
-        draw_text("CLIENT", 20.0, 20.0, 40.0, WHITE);
+        draw_text("CLIENT", 80.0, 20.0, 40.0, WHITE);
 
         world = world_watch_recver.borrow().clone();
         render_world(&world, WHITE);
