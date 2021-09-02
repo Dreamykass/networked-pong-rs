@@ -4,6 +4,7 @@ use nalgebra as na;
 /// vectors are
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct World {
+    pub tick: usize,
     pub ball_pos: na::Point2<f32>,
     pub ball_vector: na::Vector2<f32>,
     pub paddle_left: na::Point2<f32>,
@@ -12,6 +13,7 @@ pub struct World {
 
 pub fn new_world() -> World {
     World {
+        tick: 0,
         ball_pos: [0.5, 0.5].into(),
         ball_vector: [0.004, 0.001].into(),
         paddle_left: [0.08, 0.5].into(),

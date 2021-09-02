@@ -21,7 +21,7 @@ pub async fn client_loop() {
         clear_background(BLACK);
         draw_text("CLIENT", 80.0, 20.0, 40.0, WHITE);
 
-        world = world_watch_recver.borrow().clone();
+        update_world_if_newer(&mut world, world_watch_recver.borrow().clone());
         render_world(&world, WHITE);
 
         input.up = is_key_down(KeyCode::Up) || is_key_down(KeyCode::W);
@@ -30,6 +30,18 @@ pub async fn client_loop() {
         input_watch_sender.send(input.clone()).unwrap();
 
         next_frame().await
+    }
+}
+
+fn update_world_if_newer(last_world: &mut World, new_world: World) {
+    if new_world.tick > last_world.tick {
+        *last_world = new_world;
+    } else {
+        log::warn!(
+            "did not update the world from the server: {} vs newer {}",
+            last_world.tick,
+            new_world.tick
+        );
     }
 }
 

@@ -32,10 +32,15 @@ pub async fn server_loop() {
 }
 
 pub fn update_world(world: &mut World, input: Input) {
+    world.tick += 1;
+
     // input
     {
         if input.reset {
-            *world = new_world();
+            *world = World {
+                tick: world.tick,
+                ..new_world()
+            };
             log::info!("world got reset by the client input");
         }
 
